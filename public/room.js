@@ -4,10 +4,15 @@ import { IMPRINTS, onePerSlot } from './joys-config.js';
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.append(e); return e; };
 const BASE = 'room/';
+// 畫風：塗鴉（預設，GPT 畫的手繪房間，art/tools/doodle_parts.py）或像素（舊房間）
+// index.html 開機前就設好 <html data-art>；換畫風要重新整理（房間的座標整組不同）
+export const ART = document.documentElement.dataset.art === 'pixel' ? 'pixel' : 'doodle';
+const DOODLE = ART === 'doodle';
 // 像素房間（art/tools/room_pixel.py）：1536×1064，地板前角已補齊
 // 房間、家具是柔和的插畫：縮小時要平滑（.room-art），用 pixelated 會跳掉像素，外框變得斷斷續續、粗細不一；小人才是真的像素畫，維持 pixelated
-const W = 1536, H = 1064;
-export const VIEW = [60, -8, 1416, 1081];
+// 塗鴉房間：1254×1254，房間本身在 (80,120)～(1180,1130)
+const W = DOODLE ? 1254 : 1536, H = DOODLE ? 1254 : 1064;
+export const VIEW = DOODLE ? [70, 108, 1120, 1032] : [60, -8, 1416, 1081];
 
 // 可以選的樣子（之後有新素材就加在這裡）
 // 只剩像素女孩（logo 的女孩，走路是 4 格動畫）；經典、復古娃娃已經不用了（使用者定案），
@@ -58,6 +63,9 @@ const dollParts = (hair, cloth, face) => {
 const PIX_W = 267, PIX_H = 420, PIX_FOOT = [133.5, 389];
 const PIX_SIZE = 340; // 畫布在房間裡的高度（人物本身大約 272，和復古娃娃一樣高）
 const PIX_FRAME = 0.15; // 走路每格幾秒
+// 塗鴉女孩：畫布和像素女孩一樣 267×420，腳底在 (133.5, 412)；走路只有一張側面，靠小跳步（.walking .bodybob）
+const DD_FOOT = [133.5, 412], DD_SIZE = 300; // 畫布在房間裡的高度（女孩本身大約 257）
+const ddSrc = (f) => `${BASE}doodle/${f}.webp`;
 // 像素女孩的圖改過就把這個數字 +1（sw.js 的清單也要一起改）：網址不同，舊版程式和新圖才不會混在一起
 const PIX_REV = 2;
 const pixSrc = (f) => `${BASE}pixel/${f}.webp?v=${PIX_REV}`;
@@ -81,6 +89,7 @@ const PIX_FACES = ['happy', 'excited', 'calm', 'moved', 'love', 'tired', 'sad', 
 const pixParts = (hair, cloth, view) => [`body_${cloth}_${view}`, `head_${hair}_${view === 'front' ? 'front' : 'side'}`];
 export function lookLayers(look, face = 'smile', emo = null) {
   const l = normalizeLook(look);
+  if (DOODLE) return [`${BASE}doodle/girl_front.webp`];
   if (l.style === 'pixel') return [...pixParts(l.hair, l.cloth, 'front'), PIX_FACES.includes(emo) && `face_${emo}`].filter(Boolean).map(pixSrc);
   if (l.style === 'doll') return dollFrontParts(l.hair, l.cloth).filter(Boolean).map((f) => `${BASE}doll/front/${f}.webp`);
   return [
@@ -90,20 +99,22 @@ export function lookLayers(look, face = 'smile', emo = null) {
 // 一般 HTML 用的小人（捏小人、我的頁面）：一疊 <img>
 export function lookHtml(look, face = 'smile', cls = 'look', emo = null) {
   const box = document.createElement('div');
-  const style = normalizeLook(look).style;
+  const style = DOODLE ? 'doodle' : normalizeLook(look).style;
   box.className = style === 'classic' ? cls : `${cls} ${style}`;
   for (const src of lookLayers(look, face, emo)) { const img = document.createElement('img'); img.src = src; img.alt = ''; box.append(img); }
   return box;
 }
 
 // ---- 地板座標：u 沿右牆往右下、v 沿左牆往左下，0~1 ----
-const O = [763, 348], EU = [674, 352], EV = [-658, 320];
+const O = DOODLE ? [615, 465] : [763, 348], EU = DOODLE ? [533, 305] : [674, 352], EV = DOODLE ? [-505, 297] : [-658, 320];
 const DET = EU[0] * EV[1] - EV[0] * EU[1];
 const toXY = (u, v) => [O[0] + u * EU[0] + v * EV[0], O[1] + u * EU[1] + v * EV[1]];
 const toUV = (x, y) => { const dx = x - O[0], dy = y - O[1]; return [(dx * EV[1] - dy * EV[0]) / DET, (EU[0] * dy - EU[1] * dx) / DET]; };
 // 家具佔的地方（u0, u1, v0, v1）
 // 床、書架、書桌＋椅子、大盆栽、電視櫃（地毯可以走過去）
-const BLOCKS = [[0, .27, .22, .87], [0, .1, .84, 1], [0, .37, 0, .25], [.38, .49, 0, .17], [.5, .83, 0, .21]];
+// 塗鴉房間：書架、床、書桌＋椅子＋右邊的盆栽
+const BLOCKS = DOODLE ? [[0, .2, 0, .37], [0, .44, .48, 1], [.47, 1, 0, .31]]
+  : [[0, .27, .22, .87], [0, .1, .84, 1], [0, .37, 0, .25], [.38, .49, 0, .17], [.5, .83, 0, .21]];
 const MIN = .03, MAX = .97, PAD = .015;
 // 生活印記放在地板上的家具（圓形，[u, v, r]），房間 update 時換
 let EXTRA = [];
@@ -183,15 +194,20 @@ export class Room {
     const defs = el('defs', {}, svg);
     const rg = el('radialGradient', { id: id('room-glow') }, defs);
     el('stop', { offset: 0, 'stop-color': '#fff3b0', 'stop-opacity': .75 }, rg); el('stop', { offset: 1, 'stop-color': '#fff3b0', 'stop-opacity': 0 }, rg);
-    el('image', { href: `${BASE}pixel_room/room.webp`, x: 0, y: 0, width: W, height: H, class: 'room-art' }, svg);
+    el('image', { href: DOODLE ? ddSrc('room') : `${BASE}pixel_room/room.webp`, x: 0, y: 0, width: W, height: H, class: 'room-art' }, svg);
     // 晚上換成夜晚的房間（art/tools/room_night.py，檯燈亮著）；第一次天黑才載入
     this.nightRoom = el('image', { x: 0, y: 0, width: W, height: H, class: 'room-art room-fade', opacity: 0 }, svg);
     const [wx, wy, ww, wh] = WINDOW_BOX;
     this.window = el('image', { x: wx, y: wy, width: ww, height: wh, class: 'room-art', display: 'none' }, svg);
     setInterval(() => this.showWindow(), 60000); // 天黑、天亮時換窗外
-    this.tvOn = el('image', { href: `${BASE}pixel_room/tv_on.webp`, x: 1040, y: 405, width: 140, height: 145, class: 'room-fade', opacity: 0 }, svg);
-    this.lamp = el('circle', { cx: 860, cy: 290, r: 120, fill: `url(#${id('room-glow')})`, class: 'room-fade', opacity: 0 }, svg);
+    this.tvOn = el('image', { href: DOODLE ? '' : `${BASE}pixel_room/tv_on.webp`, x: 1040, y: 405, width: 140, height: 145, class: 'room-fade', opacity: 0 }, svg);
+    this.lamp = el('circle', { cx: DOODLE ? 1000 : 860, cy: DOODLE ? 565 : 290, r: DOODLE ? 190 : 120, fill: `url(#${id('room-glow')})`, class: 'room-fade', opacity: 0 }, svg);
     this.itemsG = el('g', { class: 'room-items room-nohit' }, svg);
+    // 塗鴉房間：貓在床上睡覺（點了呼嚕呼嚕）
+    if (DOODLE) {
+      const cat = this.cat = el('image', { href: ddSrc('cat_sleep'), x: 300, y: 560, width: 150, height: 105, class: 'room-art room-cat', role: 'button', 'aria-label': '床上睡覺的貓' }, svg);
+      cat.addEventListener('click', (e) => { e.stopPropagation(); if (this.me.asleep) { this.wake(); return; } this.say(['呼嚕呼嚕…', '（貓咪翻了個身）', '噓，牠睡得好熟'][Math.floor(Math.random() * 3)], 2200); });
+    }
     this.guestG = el('g', { class: 'room-guests' }, svg); // 來串門子的人站在門口
     this.itemKeys = '';
     this.markers = el('g', {}, svg);
@@ -200,6 +216,8 @@ export class Room {
     this.fx = el('g', { class: 'room-nohit' }, svg);
     this.dark = el('rect', { x: -2000, y: -2000, width: W + 4000, height: H + 4000, fill: '#1c1f4a', opacity: 0, class: 'room-fade room-night' }, svg); // 晚上關檯燈
     this.night = el('rect', { x: -2000, y: -2000, width: W + 4000, height: H + 4000, fill: '#2c2f6b', opacity: 0, class: 'room-fade room-night' }, svg);
+    // 塗鴉房間沒有夜晚圖：天黑時蓋一層深藍，檯燈的光疊在上面
+    if (DOODLE) { this.dusk = el('rect', { x: -2000, y: -2000, width: W + 4000, height: H + 4000, fill: '#2c2f6b', opacity: 0, class: 'room-fade room-night' }, svg); svg.append(this.lamp); }
     // 小人
     this.meG = el('g', { id: id('room-me'), class: 'room-me' }, svg);
     this.pose = el('g', { class: 'idle' }, this.meG);
@@ -231,6 +249,10 @@ export class Room {
     this.pixFlip = el('g', { class: 'pix' }, bob);
     const pix = el('g', { transform: `scale(${PIX_SIZE / PIX_H}) translate(${-PIX_FOOT[0]},${-PIX_FOOT[1]})` }, this.pixFlip);
     this.pixG = pix; this.pixImgs = {}; this.pixKey = '';
+    // 塗鴉女孩：站著正面（不翻）、走路側面（朝右畫的，往左走跟著整個小人翻面）
+    this.ddFlip = el('g', { class: 'dd', style: 'display:none' }, bob);
+    const dd = el('g', { transform: `scale(${DD_SIZE / PIX_H}) translate(${-DD_FOOT[0]},${-DD_FOOT[1]})` }, this.ddFlip);
+    this.ddImgs = DOODLE ? { front: el('image', { href: ddSrc('girl_front'), width: PIX_W, height: PIX_H }, dd), side: el('image', { href: ddSrc('girl_side'), width: PIX_W, height: PIX_H, opacity: 0 }, dd) } : {};
     this.pixT = 0;
     this.walking = false;
     // 泡泡（HTML，字比較清楚）
@@ -268,6 +290,10 @@ export class Room {
     if (v === this.box.dataset.window) return;
     this.box.dataset.window = v;
     const night = v.endsWith('_night');
+    if (DOODLE) { // 窗外還沒有天氣的圖，只分白天晚上
+      if (night !== (this.box.dataset.light === 'night')) { this.box.dataset.light = night ? 'night' : 'day'; this.lampOn = night; this.showLamp(); }
+      return;
+    }
     if (night !== (this.box.dataset.light === 'night')) {
       this.box.dataset.light = night ? 'night' : 'day';
       if (night && !this.nightRoom.getAttribute('href')) this.nightRoom.setAttribute('href', `${BASE}pixel_room/room_night.webp`);
@@ -281,6 +307,12 @@ export class Room {
   // 白天：檯燈旁邊一圈光；晚上：夜晚房間本身就有檯燈的光，關燈時整間暗下來
   showLamp() {
     const night = this.box.dataset.light === 'night';
+    if (DOODLE) {
+      this.lamp.setAttribute('opacity', this.lampOn ? 1 : 0);
+      this.dusk.setAttribute('opacity', night ? (this.lampOn ? .3 : .5) : 0);
+      this.box.dataset.lamp = this.lampOn ? 'on' : 'off';
+      return;
+    }
     this.lamp.setAttribute('opacity', this.lampOn && !night ? 1 : 0);
     this.dark.setAttribute('opacity', !this.lampOn && night ? .4 : 0);
     this.box.dataset.lamp = this.lampOn ? 'on' : 'off';
@@ -288,7 +320,8 @@ export class Room {
   // 生活印記的家具：照 z 疊，地板上的會擋路（小人剛好站在那裡就挪開）
   placeItems(keys) {
     // 同一個位置只放一件（keys 新的在前）
-    const list = onePerSlot(keys.filter((k) => IMPRINTS[k])).sort((a, b) => IMPRINTS[a].z - IMPRINTS[b].z);
+    // 塗鴉房間還沒有生活印記的家具圖，先不擺
+    const list = DOODLE ? [] : onePerSlot(keys.filter((k) => IMPRINTS[k])).sort((a, b) => IMPRINTS[a].z - IMPRINTS[b].z);
     if (list.join() === this.itemKeys) return;
     this.itemKeys = list.join();
     this.itemsG.replaceChildren();
@@ -311,10 +344,10 @@ export class Room {
     const look = normalizeLook(this.state.look);
     const doll = look.style === 'doll';
     this.isDoll = doll;
-    this.isPixel = look.style === 'pixel';
+    this.isPixel = !DOODLE && look.style === 'pixel';
     this.showPose();
-    this.classic.style.display = doll || this.isPixel ? 'none' : '';
-    if (this.isPixel) return srcs;
+    this.classic.style.display = doll || this.isPixel || DOODLE ? 'none' : '';
+    if (this.isPixel || DOODLE) return srcs;
     if (doll) {
       dollFrontParts(look.hair, look.cloth).forEach((f, i) => {
         const img = this.frontImgs[i];
@@ -352,7 +385,13 @@ export class Room {
     this.dollFrontFlip.style.display = this.isDoll && !this.walking ? '' : 'none';
     this.pixFlip.style.display = this.isPixel ? '' : 'none';
     if (this.isPixel) this.pixFrame();
-    this.box.dataset.pose = this.isDoll || this.isPixel ? (this.walking ? 'side' : 'front') : 'classic';
+    this.ddFlip.style.display = DOODLE ? '' : 'none';
+    if (DOODLE) {
+      this.ddImgs.front.setAttribute('opacity', this.walking ? 0 : 1);
+      this.ddImgs.side.setAttribute('opacity', this.walking ? 1 : 0);
+      this.ddFlip.setAttribute('transform', this.walking ? '' : `scale(${this.me.dir},1)`);
+    }
+    this.box.dataset.pose = this.isDoll || this.isPixel || DOODLE ? (this.walking ? 'side' : 'front') : 'classic';
   }
   // 像素女孩：站著＝正面；走路＝側面的頭＋第幾格身體
   // 每個姿勢的圖都先放好、只切換哪張看得到：換 href 的話 iPhone 有時新圖還沒畫出來，會變成側面的頭配正面的身體
@@ -393,13 +432,14 @@ export class Room {
     this.meG.setAttribute('transform', `translate(${x},${y}) scale(${this.me.dir},1)`);
     this.dollFrontFlip.setAttribute('transform', `scale(${this.me.dir},1)`);
     if (this.isPixel && !this.walking) this.pixFlip.setAttribute('transform', `scale(${this.me.dir},1)`);
+    if (DOODLE && !this.walking) this.ddFlip.setAttribute('transform', `scale(${this.me.dir},1)`);
     if (this.bubble.classList.contains('show')) this.placeBubble();
   }
   // 擋路的生活印記是模組共用的變數：兩個房間（自己的、串門子的）輪流用，走路前換成自己的
   use() { EXTRA = this.extra.concat(this.guestBlocks); }
   // 客人站在門口：自己的房間是今天來過的人，別人的小窩是我自己；最多兩位，點了交給 on.guest
   showGuests(list = []) {
-    const spots = [[.88, .18], [.95, .34]];
+    const spots = DOODLE ? [[.92, .5], [.8, .66]] : [[.88, .18], [.95, .34]];
     const guests = list.slice(0, spots.length);
     const key = JSON.stringify(guests.map((g) => [g.name, g.look, g.emo]));
     if (key === this.guestKey) return;
@@ -412,9 +452,14 @@ export class Room {
       const look = normalizeLook(g.look);
       const wrap = el('g', { class: 'room-guest', transform: `translate(${x},${y}) scale(-1,1)`, role: 'button', 'aria-label': g.label || g.name, 'data-guest': g.name }, this.guestG);
       el('ellipse', { cx: 0, cy: -2, rx: 46, ry: 12, fill: 'rgba(160,70,100,.16)' }, wrap);
+      if (DOODLE) {
+        const inner = el('g', { transform: `scale(${DD_SIZE * .92 / PIX_H}) translate(${-DD_FOOT[0]},${-DD_FOOT[1]})` }, wrap);
+        el('image', { href: ddSrc('girl_front'), width: PIX_W, height: PIX_H }, inner);
+      } else {
       const inner = el('g', { transform: `scale(${PIX_SIZE * .92 / PIX_H}) translate(${-PIX_FOOT[0]},${-PIX_FOOT[1]})` }, wrap);
       for (const f of [...pixParts(look.hair, look.cloth, 'front'), PIX_FACES.includes(g.emo) && `face_${g.emo}`].filter(Boolean)) {
         el('image', { href: pixSrc(f), width: PIX_W, height: PIX_H, style: 'image-rendering:pixelated' }, inner);
+      }
       }
       wrap.addEventListener('click', (e) => { e.stopPropagation(); if (this.on.guest) this.on.guest(g); });
       this.guestBlocks.push([u, v, .06]);
@@ -497,8 +542,8 @@ export class Room {
     const m = this.svg.getScreenCTM();
     if (!m || !box.width) return;
     let [x, y] = toXY(this.me.u, this.me.v);
-    y -= (this.isDoll || this.isPixel ? DOLL_SIZE : 320) + 15;
-    if (this.me.asleep) [x, y] = [380, 380];
+    y -= (DOODLE ? DD_SIZE * .88 : this.isDoll || this.isPixel ? DOLL_SIZE : 320) + 15;
+    if (this.me.asleep) [x, y] = DOODLE ? [330, 520] : [380, 380];
     const p = this.svg.createSVGPoint(); p.x = x; p.y = y;
     const s = p.matrixTransform(m);
     const half = Math.min(110, this.bubble.offsetWidth / 2 || 60);
@@ -538,7 +583,7 @@ export class Room {
   sleep() {
     this.me.asleep = true; this.meG.style.display = 'none';
     this.night.setAttribute('opacity', .5);
-    const z = () => { const t = el('text', { x: 360, y: 430, 'font-size': 56, 'font-weight': 900, fill: '#fff', stroke: '#5b3a3e', 'stroke-width': 4, 'paint-order': 'stroke', class: 'room-zz' }, this.fx); t.textContent = 'Z'; setTimeout(() => t.remove(), 1600); };
+    const z = () => { const t = el('text', { x: DOODLE ? 300 : 360, y: DOODLE ? 560 : 430, 'font-size': 56, 'font-weight': 900, fill: '#fff', stroke: '#5b3a3e', 'stroke-width': 4, 'paint-order': 'stroke', class: 'room-zz' }, this.fx); t.textContent = 'Z'; setTimeout(() => t.remove(), 1600); };
     z(); this.zz = setInterval(z, 600);
     this.say('晚安… 點一下叫醒我', 3000);
     this.box.dataset.actor = 'sleep';
@@ -554,7 +599,16 @@ export class Room {
   // ---- 可以點的東西 ----
   bindHots() {
     const on = this.on;
-    const HOTS = [
+    const HOTS = DOODLE ? [
+      { name: 'diary', label: '書桌上的日記本：記一筆', r: [858, 568, 100, 60], go: [.55, .37, 1], act: () => on.diary && on.diary(), spark: [905, 590] },
+      { name: 'letter', label: '書桌抽屜：寫給未來的自己', r: [912, 665, 80, 115], go: [.78, .37, 1], act: () => on.letter && on.letter(), spark: [950, 700] },
+      { name: 'lamp', label: '檯燈', r: [950, 525, 100, 120], go: [.66, .37, 1], act: () => { this.lampOn = !this.lampOn; this.showLamp(); this.say(this.lampOn ? '開燈 💡' : '關燈'); } },
+      { name: 'bed', label: '床', r: [155, 515, 405, 330], go: [.47, .66, -1], act: () => this.sleep() },
+      { name: 'clock', label: '時鐘', r: [218, 365, 120, 135], act: () => this.say(`現在 ${clock()} ⏰`) },
+      { name: 'window', label: '窗戶', r: [845, 325, 185, 195], act: () => { const w = this.state.weather; this.say(w ? `外面 ${w.icon} ${w.label} ${w.temp}°` : '今天天氣不錯 ☀️（設定裡可以打開真實天氣）'); } },
+      { name: 'shelf', label: '書架：回憶', r: [465, 255, 195, 350], go: [.26, .42, -1], act: () => on.shelf && on.shelf(), spark: [600, 380] },
+      { name: 'plant', label: '盆栽：心情花園', r: [1000, 700, 130, 160], go: [.86, .4, 1], act: () => (on.plant ? on.plant() : this.say('澆水 💧')), spark: [1065, 735] },
+    ] : [
       { name: 'diary', label: '書桌上的日記本：記一筆', r: [725, 300, 120, 75], go: [.3, .3, -1], act: () => on.diary && on.diary(), spark: [790, 325] },
       { name: 'letter', label: '書桌抽屜：寫給未來的自己', r: [826, 405, 66, 105], go: [.33, .28, -1], act: () => on.letter && on.letter(), spark: [860, 445] },
       { name: 'calendar', label: '牆上的月曆：心情月曆', r: [1110, 275, 90, 165], go: [.68, .26, 1], act: () => on.calendar && on.calendar(), spark: [1180, 295] },
@@ -578,6 +632,7 @@ export class Room {
         if (h.go && !this.instant) { const [u, v, dir] = h.go; this.marker(...nearestFree(u, v)); this.walkTo(u, v, () => { this.me.dir = dir; this.place(); h.act(); }); } else h.act();
       });
     }
+    if (this.cat) this.hots.after(this.cat); // 貓在床上：要蓋在床的熱點上面才點得到
     HOTS.filter((h) => h.spark).forEach((h, i) => el('path', { d: star(h.spark[0], h.spark[1], 16), fill: '#ffe58a', stroke: '#5b3a3e', 'stroke-width': 3, class: 'room-twinkle', style: `animation-delay: ${i * .55}s` }, this.fx));
     this.svg.append(this.meG);
   }
@@ -588,7 +643,7 @@ export class Room {
     this.box.dataset.notes = String(n || 0);
     if (!n) return;
     // 平貼在桌面上：兩個邊照地板的方向（u 沿右牆、v 沿左牆）
-    const c = [858, 372], du = [EU[0] * .036, EU[1] * .036], dv = [EV[0] * .036, EV[1] * .036];
+    const c = DOODLE ? [815, 598] : [858, 372], du = [EU[0] * .036, EU[1] * .036], dv = [EV[0] * .036, EV[1] * .036];
     const pt = (a, b) => `${c[0] + a * du[0] + b * dv[0]},${c[1] + a * du[1] + b * dv[1]}`;
     const g = el('g', { class: fresh ? 'fresh' : '' }, this.noteG);
     if (n > 1) el('polygon', { points: [pt(-.8, -1.2), pt(1.2, -1.2), pt(1.2, .8), pt(-.8, .8)].join(' '), fill: '#f6e3c9', stroke: '#8a5a44', 'stroke-width': 3 }, g);

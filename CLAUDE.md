@@ -80,6 +80,15 @@
 | 門 `door` | 串門子：去連結的人的小窩（只有一位就直接去，多位先問去誰家；沒連結的人時小人說先去邀請） |
 | 書桌上的紙條 `note` | 有人留紙條時才出現（`Room.showNote`），點了打開紙條匣 |
 
+### 塗鴉畫風（預設，使用者要求在測試網址做可以玩的版本）
+
+- 參考 OKIKI 那類韓系手繪塗鴉風：米色紙張底、深咖啡色粗線條、平塗粉彩（長春花紫、牆壁粉、木頭色）。**GPT 不要畫整張場景**（長直線會歪、小東西會糊），一件一件畫大張再組；房間目前是 GPT 畫的一整張（家具畫死在圖上）。
+- `<html data-art="doodle|pixel">`：`index.html` head 的 inline script 照 localStorage `lifey.art` 設，**預設 doodle**；「我 → 外觀與其他 → 畫風」可以換回「像素（舊）」，換了會重新整理（房間座標整組不同）。塗鴉畫風不顯示配色（顏色固定）。
+- 介面：`public/doodle.css`（在 cy.css 後面載入，全部規則都加 `[data-art="doodle"]` 前綴，顏色都在最上面的 `--dd-*` 變數）。卡片米白底＋2px 咖啡色框＋大圓角；按鈕是膠囊形、底下一條咖啡色厚度；底部分頁中間的「記一筆」是浮起來的紫色圓鈕；點陣字換成一般字體。像素畫風完全不受影響。
+- 房間：`room.js` 的 `ART`／`DOODLE`，同一個 `Room` 換一組座標（`W/H`、`VIEW`、`O/EU/EV`、`BLOCKS`、`HOTS`）。熱點：日記本、抽屜（信）、檯燈、床、時鐘、窗戶、書架、盆栽（心情花園），床上有睡覺的貓（`.room-cat`，點了說話）。**還沒有門、電視、牆上照片、月曆**（串門子先從首頁「去○○家」進去），也還沒擺生活印記家具、窗外天氣圖；晚上是蓋一層深藍（`this.dusk`）＋檯燈的光。
+- 素材：`art/source/doodle/room.png`、`chars.png`（女孩正面／側面走路／背面、貓坐著／睡覺），`python3 art/tools/doodle_parts.py` → `public/room/doodle/`（女孩畫布和像素女孩一樣 267×420，腳底 (133.5, 412)）。走路只有一張側面，靠小跳步。表情還沒有塗鴉版（記一筆的心情選項還是像素小頭像）。
+- 測試：預設跑塗鴉畫風；測像素房間專屬功能（表情、生活印記、電視、配色、串門子的門）的測試開頭 `require('./pixel-art.cjs')(p)`。塗鴉房間的測試在 `tests/e2e/doodle.test.cjs`。
+
 ### 像素房間
 
 - 素材 `art/source/room2/`：`full_v3.webp` **現在的房間**（GPT 照 `full_crt.png` 重畫、拿掉書櫃左邊的垂吊植物；使用者定案）、`full_crt.png` 上一版（GPT 拿舊房間改的：粉色映像管電視、拿掉桌上信紙、清空層架上的擺設和窗邊吊盆、電視櫃上的鬧鐘）、`full.webp` 最早的完整房間（熱點、走路範圍、窗戶、夜晚圖都是照它量的）、`empty.webp` 空房間、`furniture.webp` 大型家具（床畫錯方向，之後從 full 切）、`small.webp` 小物件。
@@ -337,7 +346,7 @@ npm run local        # 打開 http://localhost:8787
 
 ```bash
 npm i -D playwright && npx playwright install chromium   # 第一次
-tests/run.sh                 # 離線測試，16 支約 390 項，應全部通過
+tests/run.sh                 # 離線測試，17 支約 410 項，應全部通過
 tests/run-cloud.sh           # 雲端測試（本機 wrangler D1/R2 + 虛擬 Face ID），4 支
 node tests/e2e/room-weather.test.cjs   # 單跑一支（需要先自己開伺服器，見 run.sh）
 LIFEY_URL=https://develop-app.lifey.workers.dev/ node tests/e2e/ux-flows.test.cjs

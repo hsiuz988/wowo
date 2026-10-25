@@ -1,0 +1,174 @@
+/* 塗鴉畫風（<html data-art="doodle">，預設）：照 GPT 畫的手繪房間延伸出來的整套介面
+   米色紙張底、深咖啡色粗線條、平塗的粉彩（長春花紫、牆壁粉、木頭色），圓角、按鈕底下一條咖啡色的「厚度」。
+   顏色都在這一段變數；下面的規則只用變數。像素畫風（data-art="pixel"）完全不受影響。 */
+:root[data-art="doodle"], :root[data-art="doodle"][data-theme="dark"] {
+  color-scheme: light;
+  --dd-paper: #fdf4e3;   /* 紙張底 */
+  --dd-card: #fffaf1;    /* 卡片 */
+  --dd-ink: #4a3a32;     /* 線條 */
+  --dd-lav: #c9c4f4;     /* 長春花紫（按鈕、標題列） */
+  --dd-lav-ink: #6f68cf; /* 紫色的字、勾選 */
+  --dd-pink: #f6c9cc;    /* 牆壁粉 */
+  --dd-wood: #e9bf8b;    /* 木頭 */
+  --dd-line: 2px;        /* 線條粗細 */
+  --dd-r: 16px;          /* 卡片圓角 */
+
+  --bg: var(--dd-paper); --panel: var(--dd-card); --text: #3f322b; --toast-bg: var(--dd-ink);
+  --avatar-bg: var(--dd-card); --stage-bg: var(--dd-card); --room-bg: var(--dd-paper);
+  --cy-desk: var(--dd-paper); --cy-dot: transparent; --cy-frame: var(--dd-ink);
+  --cy-bar-top: var(--dd-lav); --cy-bar-bot: var(--dd-lav);
+  --cy-win-line: var(--dd-ink); --cy-win-ink: var(--dd-ink); --cy-win-bg: var(--dd-card);
+  --cy-aqua: var(--dd-lav-ink); --cy-pop-edge: var(--dd-ink); --cy-blue: var(--dd-ink); --cy-pop: #e0708a;
+  --panel-2: #fff7ea; --cy-field-line: var(--dd-ink); --cy-faint: #d8c6b0;
+  --line: #ead9c3; --cy-dash: #efe1cd; --cy-label: #5a483e; --muted: #8a776a; --cy-hint: #ab998a;
+  --accent-soft: #efedfc; --cy-on-line: #b9b4f0; --cy-soft: #f6f4ff; --cy-soft-line: #b9b4f0; --cy-soft-ink: #4a3f9a;
+  --cy-rule: #ead9c3; --cy-tint: #f6ecdc; --cy-bubble: var(--dd-card);
+  --accent: var(--dd-lav-ink); --accent-ink: var(--dd-ink); --cy-shadow: rgba(74, 58, 50, .18); --cy-shadow-soft: rgba(74, 58, 50, .1);
+  --cy-cta-top: var(--dd-lav); --cy-cta-bot: var(--dd-lav); --cy-cta-edge: var(--dd-ink);
+  --cy-glow: rgba(111, 104, 207, .2); --cy-led: #f3a6b6; --cy-toast-act: var(--dd-lav);
+  --glow: rgba(111, 104, 207, .25); --glow-line: rgba(111, 104, 207, .5); --spark: #e0708a;
+  --cy-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6.5l4.5-5' fill='none' stroke='%234a3a32' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+[data-art="doodle"] :is(html, body) { background: var(--dd-paper); }
+[data-art="doodle"] body { color: var(--text); }
+
+/* 像素字體 → 一般字體（塗鴉風不用點陣字） */
+[data-art="doodle"] :is(.cy-count b, .cy-status-head, .cy-today-is, .cy-news-date, .together-date, .cy-pixel, .setup-say, .me-stat b, .stat-num,
+  .app-version, .nb-stamp, .nb-label b, .tv-bar, .tv-static, .fselect-group, .palette-group-name, .look-tip, .look-soon-ic) {
+  font-family: var(--mono); letter-spacing: .02em;
+}
+[data-art="doodle"] :is(.cy-count b, .me-stat b, .stat-num) { font-weight: 800; }
+
+/* 外框：不再是放在桌上的小冊子，直接是一張紙 */
+[data-art="doodle"] main#app { margin: 0; border: 0; border-radius: 0; background: var(--dd-paper); }
+[data-art="doodle"] .page-head { border-bottom: 0; }
+[data-art="doodle"] .page-head h1 { font-size: 22px; font-weight: 800; color: var(--dd-ink); }
+
+/* 卡片：米白底、咖啡色線條、大圓角 */
+[data-art="doodle"] :is(.panel, .today-card, .me-card, .me-stat, .action-card, .menu) {
+  background: var(--dd-card) !important; border: var(--dd-line) solid var(--dd-ink) !important; border-radius: var(--dd-r) !important;
+}
+[data-art="doodle"] :is(.panel-head, .cy-box-title) { border-bottom: 0; }
+[data-art="doodle"] :is(.panel-head h2, .cy-box-title) { font-size: 16px; font-weight: 800; color: var(--dd-ink); }
+[data-art="doodle"] :is(.menu-item, .menu > button) { border-bottom: 1.5px dashed var(--line) !important; }
+[data-art="doodle"] .menu-item::before { content: "●"; color: var(--dd-lav); -webkit-text-stroke: 1.5px var(--dd-ink); font-size: 9px; }
+
+/* 按鈕：主要＝紫色、咖啡色框、底下一條厚度，按下去往下沉；一般＝白底 */
+[data-art="doodle"] :is(.btn.primary, .save-pill) {
+  background: var(--dd-lav); color: var(--dd-ink); text-shadow: none;
+  border: var(--dd-line) solid var(--dd-ink); border-radius: 999px !important; box-shadow: 0 3px 0 var(--dd-ink);
+}
+[data-art="doodle"] :is(.btn.primary, .save-pill):not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--dd-ink); }
+[data-art="doodle"] :is(.btn.primary, .save-pill):disabled { opacity: .5; }
+[data-art="doodle"] .btn:where(:not(.primary, .danger, .link-btn)) {
+  background: #fff; color: var(--dd-ink); border: var(--dd-line) solid var(--dd-ink); border-radius: 999px; box-shadow: 0 3px 0 var(--dd-ink);
+}
+[data-art="doodle"] .btn:where(:not(.primary, .danger, .link-btn)):not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--dd-ink); }
+[data-art="doodle"] .btn.danger { border-radius: 999px; }
+[data-art="doodle"] :is(.me-edit, .cy-bgm, .cy-visit) {
+  background: #fff; color: var(--dd-ink); border: var(--dd-line) solid var(--dd-ink); border-radius: 999px; box-shadow: 0 2px 0 var(--dd-ink);
+}
+[data-art="doodle"] .cy-bgm svg { color: var(--dd-ink); }
+[data-art="doodle"] .cy-bgm.on { background: var(--dd-lav); border-color: var(--dd-ink); }
+[data-art="doodle"] a, [data-art="doodle"] .link-btn { color: var(--dd-lav-ink); font-weight: 700; }
+
+/* 小標籤 */
+[data-art="doodle"] .chip { border: var(--dd-line) solid var(--dd-ink); background: #fff; color: var(--dd-ink); }
+[data-art="doodle"] .chip.on { background: var(--dd-lav); border-color: var(--dd-ink); color: var(--dd-ink); font-weight: 700; }
+[data-art="doodle"] .nb-label b { background: var(--dd-pink); color: var(--dd-ink); border: 1.5px solid var(--dd-ink); border-radius: 999px; padding: 0 8px; font-weight: 800; }
+
+/* 輸入框：白底、咖啡色框、圓角，聚焦是紫色 */
+[data-art="doodle"] :is(input:is([type="text"], [type="search"], [type="date"], [type="email"], [type="number"], [type="tel"], [type="url"], :not([type])), textarea, select, button.fselect-btn) {
+  background-color: #fff; border: var(--dd-line) solid var(--dd-ink); border-radius: 12px; box-shadow: none;
+}
+[data-art="doodle"] :is(input:is([type="text"], [type="search"], [type="date"], [type="email"], [type="number"], [type="tel"], [type="url"], :not([type])), textarea, select, button.fselect-btn):focus,
+[data-art="doodle"] button.fselect-btn[aria-expanded="true"] { border-color: var(--dd-lav-ink); box-shadow: 0 0 0 3px var(--cy-glow); }
+[data-art="doodle"] select, [data-art="doodle"] button.fselect-btn { background-size: 12px 8px; }
+
+/* 底部分頁：米白底、上面一條線；目前這頁是紫色小膠囊，中間的「記一筆」是浮起來的圓鈕 */
+[data-art="doodle"] .tabbar {
+  left: 0; right: 0; gap: 2px; align-items: center; padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+  background: var(--dd-card); border-top: var(--dd-line) solid var(--dd-ink);
+}
+[data-art="doodle"] .tabbar button {
+  height: 52px; margin: 0; border: 0; border-radius: 14px; background: none; color: var(--muted); font-size: 12px; letter-spacing: .04em;
+}
+[data-art="doodle"] .tabbar button[data-tab-btn][aria-current="page"] {
+  height: 52px; margin: 0; background: var(--accent-soft); color: var(--dd-ink); box-shadow: inset 0 0 0 var(--dd-line) var(--dd-ink);
+}
+[data-art="doodle"] .tabbar .tab-add {
+  justify-self: center; width: 64px; height: 64px; margin-top: -26px; border-radius: 50%;
+  background: var(--dd-lav); color: var(--dd-ink); border: var(--dd-line) solid var(--dd-ink); box-shadow: 0 3px 0 var(--dd-ink); text-shadow: none;
+}
+[data-art="doodle"] .tabbar .tab-add:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--dd-ink); }
+@media (min-width: 660px) {
+  [data-art="doodle"] main#app { margin: 0 auto; }
+  [data-art="doodle"] .tabbar { left: 50%; right: auto; width: 640px; border: var(--dd-line) solid var(--dd-ink); border-bottom: 0; border-radius: 18px 18px 0 0; }
+}
+
+/* 首頁 */
+[data-art="doodle"] .cy-count { color: var(--cy-label); font-weight: 600; }
+[data-art="doodle"] .cy-look { border: var(--dd-line) solid var(--dd-ink); border-radius: 50%; background: var(--dd-pink); }
+[data-art="doodle"] .cy-name-row h1 { font-weight: 800; }
+[data-art="doodle"] .cy-msg-box { border: var(--dd-line) solid var(--dd-ink); border-radius: 14px; background: #fff; }
+[data-art="doodle"] .cy-msg-tail { background: #fff; border-color: var(--dd-ink); border-width: var(--dd-line); }
+[data-art="doodle"] .cy-msg { font-style: normal; }
+[data-art="doodle"] .cy-status-menu { border: var(--dd-line) solid var(--dd-ink); border-radius: 14px; box-shadow: 0 3px 0 var(--dd-ink); background: var(--dd-card); }
+[data-art="doodle"] .cy-invite { border: var(--dd-line) dashed var(--dd-ink); border-radius: var(--dd-r); background: var(--dd-card); }
+[data-art="doodle"] .cy-invite-ic { border: var(--dd-line) solid var(--dd-ink); border-radius: 12px; background: var(--dd-pink); }
+[data-art="doodle"] .cy-news-item { border-bottom: 1.5px dashed var(--line); }
+[data-art="doodle"] .cy-tag { color: var(--dd-lav-ink); }
+
+/* 房間：咖啡色框；白天紙張色，晚上深紫 */
+[data-art="doodle"] .home-page .room-box { border: var(--dd-line) solid var(--dd-ink); border-radius: 20px; background: var(--dd-paper); }
+[data-art="doodle"] .home-page .room-box:has(#scene[data-light="night"]) { background: #3a3550; border-color: var(--dd-ink); }
+[data-art="doodle"] .visit-room { border: var(--dd-line) solid var(--dd-ink); border-radius: 20px; background: var(--dd-paper); }
+[data-art="doodle"] .visit-room:has(.room[data-light="night"]) { background: #3a3550; }
+[data-art="doodle"] .room-zoom { background: #fff; border: var(--dd-line) solid var(--dd-ink); color: var(--dd-ink); box-shadow: 0 2px 0 var(--dd-ink); }
+[data-art="doodle"] .scene-bubble { background: #fff; color: var(--dd-ink); border: var(--dd-line) solid var(--dd-ink); border-radius: 14px; box-shadow: 0 3px 0 rgba(74, 58, 50, .2); }
+[data-art="doodle"] .room-cat { cursor: pointer; }
+
+/* 我的幸福：一顆一顆米白小卡，點亮是紫色 */
+[data-art="doodle"] .joy-btn { border: var(--dd-line) solid var(--dd-ink); border-radius: 14px; background: #fff; }
+[data-art="doodle"] .joy-btn.on { background: var(--accent-soft); border-color: var(--dd-ink); }
+[data-art="doodle"] .joy-btn.on .joy-name { color: var(--dd-ink); font-weight: 700; }
+[data-art="doodle"] .joy-check { background: var(--dd-lav); color: var(--dd-ink); border: 1.5px solid var(--dd-ink); }
+
+/* 我的 */
+[data-art="doodle"] .me-look { border: var(--dd-line) solid var(--dd-ink); border-radius: 50%; overflow: hidden; background: var(--dd-pink); }
+[data-art="doodle"] .me-stat b { color: var(--dd-ink); }
+[data-art="doodle"] .stat-track { background: var(--cy-dash); }
+
+/* 彈出視窗：紙張底、粗框、紫色標題列 */
+[data-art="doodle"] dialog.sheet { background: var(--dd-paper); border: var(--dd-line) solid var(--dd-ink); border-bottom: 0; border-radius: 22px 22px 0 0; }
+@media (min-width: 700px) { [data-art="doodle"] dialog.sheet { border-bottom: var(--dd-line) solid var(--dd-ink); border-radius: 22px; box-shadow: 0 4px 0 var(--dd-ink); } }
+[data-art="doodle"] dialog.sheet::backdrop { background: rgba(74, 58, 50, .4); }
+[data-art="doodle"] .win-bar { background: var(--dd-lav); color: var(--dd-ink); border-bottom: var(--dd-line) solid var(--dd-ink); }
+[data-art="doodle"] .win-title { font-weight: 800; }
+[data-art="doodle"] .win-x { color: var(--dd-ink); }
+[data-art="doodle"] .composer-head { background: var(--dd-lav); color: var(--dd-ink); border-bottom: var(--dd-line) solid var(--dd-ink) !important; }
+[data-art="doodle"] .composer-head :is(h3, .icon-btn) { color: var(--dd-ink); }
+[data-art="doodle"] dialog.composer-page { background: var(--dd-paper); border: var(--dd-line) solid var(--dd-ink); }
+[data-art="doodle"] .cy-window { border: var(--dd-line) solid var(--dd-ink); border-radius: 20px; background: var(--dd-card); }
+[data-art="doodle"] .cy-window-bar { background: var(--dd-lav); color: var(--dd-ink); border-bottom: var(--dd-line) solid var(--dd-ink); }
+[data-art="doodle"] .setup-win { box-shadow: 0 4px 0 var(--dd-ink); }
+[data-art="doodle"] .cy-setup .setup-body { background: var(--dd-card); }
+[data-art="doodle"] .win-btns i { background: #fff; border: 1.5px solid var(--dd-ink); border-radius: 50%; color: var(--dd-ink); }
+[data-art="doodle"] .setup-say { border: var(--dd-line) solid var(--dd-ink); border-radius: 12px; color: var(--dd-ink); box-shadow: 0 3px 0 rgba(74, 58, 50, .2); }
+[data-art="doodle"] .setup-say::before { border-top-color: var(--dd-ink); }
+[data-art="doodle"] .toast { border-radius: 999px; }
+
+/* 塗鴉女孩的頭像：畫布 267×420，頭在上面一半；方框、圓框都只露出頭 */
+[data-art="doodle"] .look.doodle.look-head { transform: translateY(-8%) scale(1.02); transform-origin: 50% 0; }
+[data-art="doodle"] .look-opt .look.doodle.look-head { transform: translateY(-7%) scale(1.15); transform-origin: 50% 0; }
+
+/* 例外：記一筆的橫線紙（內文、想多說一點心情）不要框 */
+[data-art="doodle"] :is(.nb-page .composer-text, .nb-sec textarea[name="feel"]),
+[data-art="doodle"] :is(.nb-page .composer-text, .nb-sec textarea[name="feel"]):focus { border: 0; border-radius: 0; box-shadow: none; background-color: transparent; }
+/* 心情的表情：平常不框，選到才有紫色圓框 */
+[data-art="doodle"] .emo-grid .chip.emo { border-color: transparent; background: none; border-radius: 14px; }
+[data-art="doodle"] .emo-grid .chip.emo.on { border-color: var(--dd-ink); background: var(--accent-soft); box-shadow: none; }
+/* 首頁房間下面那一大塊也是紙張色 */
+[data-art="doodle"] .home-sheet { background: var(--dd-paper); }
+/* 塗鴉畫風的顏色是固定的，配色只在像素畫風有作用 */
+[data-art="doodle"] #palette-field { display: none; }

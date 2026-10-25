@@ -11,6 +11,7 @@ const scene = (p) => p.evaluate(() => ({ ...document.querySelector('#scene').dat
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
   const p = await ctx.newPage(); await require('./adapt.cjs')(p);
+  await require('./pixel-art.cjs')(p);
   p.on('pageerror', e => errors.push(e.message));
   p.on('dialog', d => d.accept());
   await p.goto(URL);

@@ -12,6 +12,7 @@ const assert = (c, msg) => { if (!c) { console.log('❌ FAIL', msg); process.exi
 const errors = [];
 async function device(b, label) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  await require('./pixel-art.cjs')(ctx);
   const p = await ctx.newPage(); await require('./adapt.cjs')(p);
   p.on('pageerror', e => errors.push(`${label}: ${e.message}`)); p.on('dialog', d => d.accept());
   const cdp = await ctx.newCDPSession(p);

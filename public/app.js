@@ -1619,7 +1619,7 @@ function renderToday() {
   const more = rest > 0 && !ui.todayMore ? h('button', {
     type: 'button', class: 'link-btn today-more', onclick: () => { ui.todayMore = true; renderToday(); },
   }, `還有 ${rest} 張小卡片 ▾`) : null;
-  root.replaceChildren(...(ui.todayMore ? cards : cards.slice(0, 1)), more);
+  root.replaceChildren(...[...(ui.todayMore ? cards : cards.slice(0, 1)), more].filter(Boolean));
 }
 
 // ---------- 底部分頁 ----------
@@ -2845,6 +2845,7 @@ function openSettings(page = 'cloud') {
   $('#pref-music').checked = musicPref();
   renderThemeChips();
   renderPaletteChips();
+  renderArtChips();
   renderSettingsStatus();
   renderStorageStatus();
   settingsGo(page);
@@ -2873,6 +2874,16 @@ function renderThemeChips() {
   $('#theme-chips').replaceChildren(...THEMES.map(([v, label]) => h('button', {
     type: 'button', class: `chip${pref === v ? ' on' : ''}`, 'aria-pressed': String(pref === v),
     onclick: () => { try { localStorage.setItem('lifey.theme', v); } catch (e) { /* 無痕模式存不了，只套用這次 */ } applyTheme(); renderThemeChips(); },
+  }, label)));
+}
+
+// ---------- 畫風：塗鴉（預設）／像素（舊房間）；存在這支手機，換了要重新整理 ----------
+const ARTS = [['doodle', '塗鴉'], ['pixel', '像素（舊）']];
+function renderArtChips() {
+  const cur = document.documentElement.dataset.art || 'doodle';
+  $('#art-chips').replaceChildren(...ARTS.map(([v, label]) => h('button', {
+    type: 'button', class: `chip${cur === v ? ' on' : ''}`, 'aria-pressed': String(cur === v), 'data-art': v,
+    onclick: () => { if (v === cur) return; try { localStorage.setItem('lifey.art', v); } catch (e) { /* 無痕模式存不了 */ } location.reload(); },
   }, label)));
 }
 

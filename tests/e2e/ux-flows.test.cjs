@@ -12,6 +12,7 @@ const st = (p) => p.evaluate(() => new Promise(r => { const q = indexedDB.open('
 (async () => {
   const b = await chromium.launch();
   const p = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  await require('./pixel-art.cjs')(p);
   const errors = []; p.on('pageerror', e => errors.push(e.message));
   const native = []; p.on('dialog', d => { native.push(d.message()); d.dismiss(); });
   await p.goto(URL);

@@ -1,11 +1,11 @@
 // 版本號：主.次.修（見 CLAUDE.md「版本號」）。改了任何檔案就把最後一位 +1，舊快取才會被清掉
-const VERSION = '0.0.111';
+const VERSION = '0.0.112';
 const CACHE = `lifelog-${VERSION}`;
 const ASSETS = [
   './',
   './privacy',
   './style.css',
-  './cy.css', './moods.js', './joys.js', './joys-config.js',
+  './cy.css', './doodle.css', './moods.js', './joys.js', './joys-config.js',
   './app.js',
   './ptr.js',
   './db.js',
@@ -124,6 +124,7 @@ const ASSETS = [
   './brand/setup_hero.webp',
   './brand/logo_text.webp',
   './room/pixel_room/room.webp',
+  './room/doodle/room.webp', './room/doodle/girl_front.webp', './room/doodle/girl_side.webp', './room/doodle/girl_back.webp', './room/doodle/cat_sleep.webp', './room/doodle/cat_sit.webp',
   './room/pixel_room/room_night.webp',
   './room/pixel_room/tv_on.webp',
   './room/pixel_room/window_cloudy.webp',

@@ -12,6 +12,7 @@ const errors = [];
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const p = await ctx.newPage(); await require('./adapt.cjs')(p);
+  await require('./pixel-art.cjs')(p);
   p.on('pageerror', (e) => errors.push(e.message));
   p.on('dialog', (d) => d.accept());
   await p.clock.install({ time: new Date('2026-10-21T10:00:00') });

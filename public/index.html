@@ -22,6 +22,10 @@
       var pal = '';
       try { pal = localStorage.getItem('lifey.palette') || ''; } catch (e) {}
       if (pal && pal !== 'periwinkle') document.documentElement.dataset.palette = pal;
+      // 畫風：塗鴉（預設）或像素（舊）；doodle.css、room.js 照這個切換
+      var art = 'doodle';
+      try { art = localStorage.getItem('lifey.art') === 'pixel' ? 'pixel' : 'doodle'; } catch (e) {}
+      document.documentElement.dataset.art = art;
     })();
   </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -34,6 +38,7 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="cy.css">
+  <link rel="stylesheet" href="doodle.css">
 </head>
 <body>
   <!-- 第一次開啟：介紹＋姓名與生日 -->
@@ -601,10 +606,14 @@
     <section class="settings-page" data-page="other" hidden>
       <div class="sheet-top"><h3>外觀與其他</h3></div>
       <div class="field">
+        <span class="field-label">畫風</span>
+        <div id="art-chips" class="chips"></div>
+      </div>
+      <div class="field">
         <span class="field-label">外觀</span>
         <div id="theme-chips" class="chips"></div>
       </div>
-      <div class="field">
+      <div class="field" id="palette-field">
         <span class="field-label">配色</span>
         <div id="palette-chips" class="palette-chips"></div>
       </div>

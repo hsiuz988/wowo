@@ -6,6 +6,7 @@ const tab = (p, t) => p.click(`#tabbar [data-tab-btn="${t}"]`);
 (async () => {
   const b = await chromium.launch();
   const p = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  await require('./pixel-art.cjs')(p);
   const errors = []; p.on('pageerror', e => errors.push(e.message));
   await p.goto(URL);
   const v = (name) => p.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
