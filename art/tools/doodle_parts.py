@@ -42,9 +42,22 @@ def cutout(im):
     return out
 
 
+def room_cutout(im):
+    """房間：去掉從邊緣連過來的米色底（房間才能放在天空、草地的背景上）"""
+    a = np.array(im.convert('RGB')).astype(int)
+    bg = np.abs(a - np.array([253, 244, 227])).max(axis=2) < 14
+    lab, _ = ndimage.label(bg)
+    edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    fg = ~np.isin(lab, list(edge))
+    alpha = Image.fromarray((fg * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(.8))
+    out = im.convert('RGBA')
+    out.putalpha(alpha)
+    return out
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    room = Image.open(SRC / 'room.png').convert('RGB')
+    room = room_cutout(Image.open(SRC / 'room.png'))
     room.save(OUT / 'room.webp', quality=90, method=6)
     sheet = cutout(Image.open(SRC / 'chars.png'))
     parts = {k: sheet.crop(b) for k, b in BOXES.items()}

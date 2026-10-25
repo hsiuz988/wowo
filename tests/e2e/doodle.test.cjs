@@ -14,7 +14,7 @@ const errors = [];
   await p.clock.install({ time: new Date('2026-05-10T14:00:00') });
   await p.goto(URL);
   assert(await p.evaluate(() => document.documentElement.dataset.art) === 'doodle', '預設是塗鴉畫風');
-  assert(await p.evaluate(() => getComputedStyle(document.body).backgroundColor) === 'rgb(253, 244, 227)', '紙張色的底');
+  assert(await p.evaluate(() => getComputedStyle(document.body).backgroundColor) === 'rgb(255, 250, 241)', '米白紙張色的底');
   await p.fill('#setup-form [name=name]', 'Hsiu'); await p.fill('#setup-form [name=birthday]', '1995-03-02'); await p.click('#setup-form button[type=submit]');
   await p.waitForFunction(() => document.querySelector('#look-dialog').open);
   assert(await p.$eval('#look-dialog .look-full img', (e) => e.getAttribute('src').includes('doodle/girl_front')), '換裝畫面是塗鴉女孩');
