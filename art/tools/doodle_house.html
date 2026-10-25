@@ -1,0 +1,151 @@
+<!doctype html>
+<!-- 塗鴉風的整棟房子骨架（草稿）：牆、地板、樓梯、欄杆、屋頂、花園都用程式照同一個等角角度畫，房間才接得自然；家具之後另外疊上去 -->
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#fdf4e3}svg{display:block}</style>
+<svg id="s" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('s');
+const INK = '#3d2c26', SW = 2.2;
+const C = {
+  floor: '#f9d4a2', plank: '#e8b984', slabTop: '#ebc3b1', slabSide: '#ddae9a', slabFront: '#e6b8a5',
+  wains: '#fdf3e2', wainsLine: '#ecd6bb',
+  pink: '#fcdcdc', yellow: '#fcf1c9', yellowStripe: '#f4e2a2', mint: '#d4ecdc', lilac: '#e1d9f3',
+  tile: '#c4e5f6', tileLine: '#9dcbe6', tileFloor: '#f4fafc',
+  glass: '#c3e9fe', frame: '#ffffff', wood: '#e2b077', woodDark: '#c99261', door: '#d9a26e',
+  grass: '#a9d58c', grassSide: '#8cc06f', stone: '#efe2cd', fence: '#ffffff', roof: '#ee9a92', roofSide: '#dc857e',
+};
+const K = 2.4, OX = 300 * K, OY = 330 * K;
+const P = (x, y, z = 0) => [OX + (x - y) * K, OY + ((x + y) / 2 - z) * K];
+const pts = (a) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+function el(tag, at, parent = root) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); parent.appendChild(e); return e; }
+const defs = el('defs', {}, svg);
+const f = el('filter', { id: 'wob', x: '-2%', y: '-2%', width: '104%', height: '104%' }, defs);
+el('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.02', numOctaves: 2, seed: 7 }, f);
+el('feDisplacementMap', { in: 'SourceGraphic', scale: 2.2 }, f);
+const root = el('g', { filter: 'url(#wob)' }, svg);
+const poly = (P3, fill, extra = {}) => el('polygon', { points: pts(P3.map((p) => P(...p))), fill, stroke: INK, 'stroke-width': SW, 'stroke-linejoin': 'round', ...extra });
+const line = (a, b, color = INK, w = SW, extra = {}) => el('line', { x1: P(...a)[0], y1: P(...a)[1], x2: P(...b)[0], y2: P(...b)[1], stroke: color, 'stroke-width': w, 'stroke-linecap': 'round', ...extra });
+// 方塊：上、左前（y+d）、右前（x+w）
+function box(x, y, z, w, d, h, top, left, right, o = {}) {
+  if (!o.noL) poly([[x, y + d, z], [x + w, y + d, z], [x + w, y + d, z + h], [x, y + d, z + h]], left);
+  if (!o.noR) poly([[x + w, y, z], [x + w, y + d, z], [x + w, y + d, z + h], [x + w, y, z + h]], right);
+  if (!o.noT) poly([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]], top);
+}
+// 牆面：plane 'y'（後牆，沿 x）或 'x'（左牆，沿 y）；a0..a1 是沿牆的範圍
+function wallPt(plane, at, a, z) { return plane === 'y' ? [a, at, z] : [at, a, z]; }
+function wall(plane, at, a0, a1, z0, h, paper, o = {}) {
+  const W = (a, z) => wallPt(plane, at, a, z);
+  poly([W(a0, z0), W(a1, z0), W(a1, z0 + h), W(a0, z0 + h)], paper);
+  // 牆紙花樣
+  if (o.dots) for (let a = a0 + 9; a < a1 - 4; a += 18) for (let z = z0 + 40; z < z0 + h - 6; z += 15) {
+    const off = ((z - z0) / 15) % 2 ? 9 : 0; if (a + off > a1 - 4) continue;
+    const q = P(...W(a + off, z)); el('circle', { cx: q[0], cy: q[1], r: 1.7, fill: '#fff' });
+  }
+  if (o.stripes) for (let a = a0 + 8; a < a1; a += 8) line(W(a, z0 + 30), W(a, z0 + h - 1), o.stripes, 3);
+  if (o.tiles) {
+    for (let a = a0 + 12; a < a1; a += 12) line(W(a, z0), W(a, z0 + h), C.tileLine, 1.2);
+    for (let z = z0 + 12; z < z0 + h; z += 12) line(W(a0, z), W(a1, z), C.tileLine, 1.2);
+  }
+  // 護牆板
+  if (!o.tiles && !o.noWains) {
+    poly([W(a0, z0), W(a1, z0), W(a1, z0 + 30), W(a0, z0 + 30)], C.wains);
+    for (let a = a0 + 6; a < a1; a += 6) line(W(a, z0 + 2), W(a, z0 + 28), C.wainsLine, 1.3);
+  }
+}
+function windowOn(plane, at, a, z, w = 30, h = 26) {
+  const W = (aa, zz) => wallPt(plane, at, aa, zz);
+  poly([W(a - 2, z - 2), W(a + w + 2, z - 2), W(a + w + 2, z + h + 2), W(a - 2, z + h + 2)], C.frame);
+  poly([W(a, z), W(a + w, z), W(a + w, z + h), W(a, z + h)], C.glass);
+  line(W(a + w / 2, z), W(a + w / 2, z + h), C.frame, 3); line(W(a, z + h / 2), W(a + w, z + h / 2), C.frame, 3);
+}
+function doorOn(plane, at, a, z, w = 18, h = 46, color = C.door) {
+  const W = (aa, zz) => wallPt(plane, at, aa, zz);
+  poly([W(a - 2, z), W(a + w + 2, z), W(a + w + 2, z + h + 2), W(a - 2, z + h + 2)], C.frame);
+  poly([W(a, z), W(a + w, z), W(a + w, z + h), W(a, z + h)], color);
+  const k = P(...W(a + w - 4, z + h * .45)); el('circle', { cx: k[0], cy: k[1], r: 2.6, fill: '#f6d67a', stroke: INK, 'stroke-width': 1.2 });
+}
+function floorPlanks(x0, x1, y0, y1, z) {
+  poly([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]], C.floor);
+  for (let y = y0 + 12; y < y1; y += 12) line([x0, y, z], [x1, y, z], C.plank, 1.4);
+}
+
+const W1 = 320, D1 = 176, H = 100, SLAB = 10, Z2 = H + SLAB, H2 = 92, D2 = 70;
+// 一樓的房間在二樓的前面（y 從 D2 到 D1）；二樓地板下面那面牆就是一樓房間的後牆（參考圖也是這樣）
+// ---------- 花園（客廳前面那一側） ----------
+box(-6, D1, -12, 156, 92, 12, C.grass, C.grassSide, C.grassSide);
+for (const [x, y] of [[30, 190], [100, 200], [118, 240], [40, 246], [130, 182]]) { const q = P(x, y, 0); el('path', { d: `M${q[0] - 5} ${q[1]} l3 -7 M${q[0]} ${q[1]} l0 -8 M${q[0] + 5} ${q[1]} l-3 -7`, stroke: '#5f9e4e', 'stroke-width': 1.8, fill: 'none', 'stroke-linecap': 'round' }); }
+for (const [x, y, r] of [[70, 184, 8], [64, 200, 7], [70, 216, 8], [80, 232, 7], [90, 248, 8]]) {
+  const c = []; for (let i = 0; i < 16; i++) { const t = i / 16 * Math.PI * 2; c.push([x + Math.cos(t) * r, y + Math.sin(t) * r * .8, 0.5]); }
+  poly(c, C.stone, { 'stroke-width': 1.6 });
+}
+// ---------- 一樓 ----------
+box(0, D2, -SLAB, W1, D1 - D2, SLAB, C.floor, C.slabFront, C.slabSide, { noT: true });
+box(-8, D2, 0, 8, D1 - D2, H, C.slabTop, C.slabFront, C.slabSide, { noR: true });
+// 一樓房間的後牆：客廳（黃條紋）| 廁所（磁磚）| 廚房（薄荷）
+wall('y', D2, 0, 150, 0, H, C.yellow, { stripes: C.yellowStripe });
+wall('y', D2, 150, 212, 0, H, C.tile, { tiles: true });
+wall('y', D2, 212, W1, 0, H, C.mint, { dots: true });
+wall('x', 0, D2, D1, 0, H, C.yellow, { stripes: C.yellowStripe });
+windowOn('x', 0, 88, 48, 30, 30); windowOn('y', D2, 172, 52, 22, 22); windowOn('y', D2, 252, 48, 36, 30);
+doorOn('x', 0, 136, 0, 20, 50); // 客廳通往花園的門
+floorPlanks(0, W1, D2, D1, 0);
+// 廁所：磁磚地板、半高的牆，門開在前面
+const BY = D2 + 56, HB = 58;
+poly([[150, D2, .5], [212, D2, .5], [212, BY, .5], [150, BY, .5]], C.tileFloor);
+for (let a = 162; a < 212; a += 12) line([a, D2, .5], [a, BY, .5], C.tileLine, 1);
+for (let b = D2 + 12; b < BY; b += 12) line([150, b, .5], [212, b, .5], C.tileLine, 1);
+box(146, D2, 0, 4, BY - D2, HB, C.wains, C.wains, C.tile, { noL: true });
+box(212, D2, 0, 4, BY - D2, HB, C.wains, C.wains, C.mint, { noL: true });
+box(146, BY, 0, 70, 4, HB, C.wains, C.wains, C.wains);
+doorOn('y', BY + 4, 160, 0, 20, 46);
+// 樓梯：沿著左牆，從前面往後爬到二樓的地板邊緣
+// 樓梯：靠著客廳的後牆，從右邊往左爬，最上面一階接到二樓地板的邊緣
+const steps = 11, sx0 = 22, dx = 8, sw = 28;
+for (let i = 0; i < steps; i++) {
+  const x = sx0 + i * dx, z = Z2 - (i * Z2) / steps;
+  box(x, D2, 0, dx, sw, z, '#efc796', '#dcab74', '#e6b984');
+}
+// ---------- 二樓（往後退，地板邊緣有欄杆） ----------
+box(0, 0, H, W1, D2, SLAB, C.floor, C.slabFront, C.slabSide, { noT: true });
+box(-8, -8, Z2, W1 + 8, 8, H2, C.slabTop, C.slabSide, C.slabSide, { noL: true });
+box(-8, 0, Z2, 8, D2, H2, C.slabTop, C.slabFront, C.slabSide, { noR: true });
+wall('y', 0, 0, 160, Z2, H2, C.pink, { dots: true });
+wall('y', 0, 160, W1, Z2, H2, C.lilac, {});
+wall('x', 0, 0, D2, Z2, H2, C.pink, { dots: true });
+windowOn('y', 0, 64, Z2 + 44, 36, 30); windowOn('y', 0, 226, Z2 + 44, 36, 30);
+floorPlanks(0, W1, 0, D2, Z2);
+// 主臥室｜書房：半高隔間，中間一個拱門
+const HP = 62;
+box(158, 0, Z2, 4, D2, HP, C.wains, C.wains, C.lilac, { noL: true });
+{ const arch = []; const a0 = 22, a1 = 48, top = 38; arch.push([162, a0, Z2]);
+  for (let i = 0; i <= 12; i++) { const t = Math.PI - i * Math.PI / 12; arch.push([162, (a0 + a1) / 2 + Math.cos(t) * (a1 - a0) / 2, Z2 + top + Math.sin(t) * 13]); }
+  arch.push([162, a1, Z2]); poly(arch, C.pink); }
+// 欄杆（樓梯口留空）
+const rz = Z2 + 24, gap = sx0 + 14;
+for (let x = gap + 4; x <= W1 - 2; x += 9) line([x, D2 - 2, Z2], [x, D2 - 2, rz], C.wood, 3.6);
+for (let x = gap + 4; x <= W1 - 2; x += 9) line([x, D2 - 2, Z2], [x, D2 - 2, rz], INK, .8, { opacity: .5 });
+box(gap, D2 - 4, rz, W1 - gap, 4, 3, C.wood, C.woodDark, C.woodDark);
+// ---------- 屋頂：後面一片斜屋頂＋左邊的山牆 ----------
+const ZR = Z2 + H2, RIDGE = 74, yR = D2 / 2;
+poly([[-8, -8, ZR], [-8, D2, ZR], [-8, yR, ZR + RIDGE - 8]], C.pink);
+poly([[-16, -18, ZR - 6], [W1 + 10, -18, ZR - 6], [W1 + 10, yR, ZR + RIDGE], [-16, yR, ZR + RIDGE]], C.roof);
+poly([[-16, yR, ZR + RIDGE], [-16, D2 + 10, ZR - 6], [-8, D2 + 10, ZR - 6], [-8, yR, ZR + RIDGE - 2]], C.roofSide);
+// ---------- 花園的籬笆（最後畫，在最前面） ----------
+function fence(a, b) {
+  const n = Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 8);
+  for (let i = 0; i <= n; i++) {
+    const x = a[0] + (b[0] - a[0]) * i / n, y = a[1] + (b[1] - a[1]) * i / n;
+    poly([[x - 2.4, y, 0], [x + 2.4, y, 0], [x + 2.4, y, 18], [x, y, 21], [x - 2.4, y, 18]], C.fence, { 'stroke-width': 1.5 });
+  }
+  line([...a, 12], [...b, 12], INK, 1.4);
+}
+fence([-4, D1 + 4], [-4, D1 + 88]);
+fence([0, D1 + 88], [146, D1 + 88]);
+fence([148, D1 + 88], [148, D1 + 4]);
+
+// 畫布大小
+const bb = root.getBBox();
+svg.setAttribute('viewBox', `${bb.x - 20} ${bb.y - 20} ${bb.width + 40} ${bb.height + 40}`);
+svg.setAttribute('width', bb.width + 40); svg.setAttribute('height', bb.height + 40);
+</script>
